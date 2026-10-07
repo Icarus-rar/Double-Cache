@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 22% 7%;
+    --foreground: 210 20% 92%;
+    --card: 222 20% 9%;
+    --card-foreground: 210 20% 92%;
+    --popover: 222 22% 8%;
+    --popover-foreground: 210 20% 92%;
+    --primary: 172 76% 45%;
+    --primary-foreground: 222 22% 7%;
+    --secondary: 222 18% 14%;
+    --secondary-foreground: 210 20% 88%;
+    --muted: 222 16% 13%;
+    --muted-foreground: 215 14% 55%;
+    --accent: 172 60% 40%;
+    --accent-foreground: 210 20% 95%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 222 16% 16%;
+    --input: 222 16% 18%;
+    --ring: 172 60% 45%;
+    --radius: 0.5rem;
+
+    --chart-1: 172 70% 50%;
+    --chart-2: 38 90% 55%;
+    --chart-3: 0 72% 58%;
+    --chart-4: 142 60% 50%;
+    --chart-5: 210 60% 60%;
+
+    --db-color: 172 70% 50%;
+    --os-color: 38 90% 55%;
+    --dup-color: 0 72% 55%;
+    --ok-color: 142 60% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
+  }
+
+  .glass-card {
+    background: hsl(222 20% 9% / 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .text-db {
+    color: hsl(var(--db-color));
+  }
+  .text-os {
+    color: hsl(var(--os-color));
+  }
+  .text-dup {
+    color: hsl(var(--dup-color));
+  }
+  .text-ok {
+    color: hsl(var(--ok-color));
+  }
+
+  .bg-db {
+    background-color: hsl(var(--db-color));
+  }
+  .bg-os {
+    background-color: hsl(var(--os-color));
+  }
+  .bg-dup {
+    background-color: hsl(var(--dup-color));
+  }
+  .bg-ok {
+    background-color: hsl(var(--ok-color));
+  }
+
+  .border-db {
+    border-color: hsl(var(--db-color));
+  }
+  .border-os {
+    border-color: hsl(var(--os-color));
+  }
+  .border-dup {
+    border-color: hsl(var(--dup-color));
+  }
+
+  .glow-db {
+    box-shadow: 0 0 12px hsl(var(--db-color) / 0.4);
+  }
+  .glow-os {
+    box-shadow: 0 0 12px hsl(var(--os-color) / 0.4);
+  }
+  .glow-dup {
+    box-shadow: 0 0 16px hsl(var(--dup-color) / 0.5);
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground));
+  }
+}

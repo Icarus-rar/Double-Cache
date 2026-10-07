@@ -1,0 +1,11 @@
+step,block_id,hit_type,latency_ms,db_cache_size,os_cache_size,duplicated_blocks,memory_wasted_kb,cache_mode
+1,0,disk_read,10.0,1,1,1,4,double_caching
+2,1,disk_read,10.0,2,2,2,8,double_caching
+3,2,disk_read,10.0,3,3,3,12,double_caching
+4,3,disk_read,10.0,4,4,4,16,double_caching
+5,4,disk_read,10.0,5,5,5,20,double_caching
+6,5,disk_read,10.0,5,5,5,20,double_caching
+7,6,disk_read,10.0,5,5,5,20,double_caching
+8,7,disk_read,10.0,5,5,5,20,double_caching
+9,8,disk_read,10.0,5,5,5,20,double_caching
+10,9,disk_read,10.0,5,5,5,20,double_caching

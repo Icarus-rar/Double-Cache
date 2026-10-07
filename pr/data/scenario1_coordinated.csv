@@ -1,0 +1,11 @@
+step,block_id,hit_type,latency_ms,db_cache_size,os_cache_size,duplicated_blocks,memory_wasted_kb,cache_mode
+1,0,disk_read,10.0,1,0,0,0,coordinated
+2,1,disk_read,0.1,2,0,0,0,coordinated
+3,2,disk_read,0.1,3,0,0,0,coordinated
+4,3,disk_read,0.1,4,0,0,0,coordinated
+5,4,disk_read,0.1,5,0,0,0,coordinated
+6,5,disk_read,0.1,5,0,0,0,coordinated
+7,6,disk_read,0.1,5,0,0,0,coordinated
+8,7,disk_read,0.1,5,0,0,0,coordinated
+9,8,disk_read,0.1,5,0,0,0,coordinated
+10,9,disk_read,0.1,5,0,0,0,coordinated
