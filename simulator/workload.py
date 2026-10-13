@@ -59,4 +59,4 @@ class Workload:
                 # Random
                 accesses.append(random.randint(0, total_blocks - 1))
         
-        return accessesS
+        return accesses

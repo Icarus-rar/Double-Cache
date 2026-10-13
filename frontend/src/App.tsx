@@ -4,6 +4,7 @@ import { SimulateView } from '@/pages/SimulateView';
 import { CompareView } from '@/pages/CompareView';
 import { AnalyzeView } from '@/pages/AnalyzeView';
 import { cn } from '@/lib/utils';
+import ApiTest from './ApiTest';
 import './App.css';
 
 type View = 'simulate' | 'compare' | 'analyze';
@@ -16,6 +17,11 @@ const NAV_ITEMS: { id: View; label: string; icon: typeof Layers }[] = [
 
 function App() {
   const [view, setView] = useState<View>('simulate');
+
+  // Temporary route for API sanity check: http://localhost:5174/api-test
+  if (window.location.pathname === '/api-test') {
+    return <ApiTest />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

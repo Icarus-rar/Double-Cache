@@ -44,6 +44,11 @@ class SimulationLogger:
             'duplicated_blocks': duplicated_count,
             'memory_wasted_kb': duplicated_count * 4,
             'cache_mode': cache_mode,
+            'db_blocks': list(db_blocks),
+            'os_blocks': list(os_blocks),
+            'duplicated_block_ids': sorted(
+                set(db_blocks).intersection(set(os_blocks))
+            ),
         })
     
     def save(self):
