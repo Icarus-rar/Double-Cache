@@ -1,0 +1,7 @@
+scenario,strategy,total_steps,db_hits,os_hits,disk_reads,avg_latency_ms,max_duplication,avg_wasted_memory_kb
+scenario1,double_caching,10,0,0,10,1.09,5,16.0
+scenario1,coordinated,10,0,0,10,1.09,0,0.0
+scenario2,double_caching,30,6,0,24,8.0,10,31.73
+scenario2,coordinated,30,6,0,24,8.0,0,0.0
+scenario3,double_caching,50,2,0,48,9.6,3,11.68
+scenario3,coordinated,50,2,0,48,9.6,0,0.0
