@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, Database, FileSpreadsheet, Play, Loader2, Zap } from 'lucide-react';
+import { BarChart3, Database, FileSpreadsheet, Play, RefreshCw, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,30 +56,24 @@ export function AnalyzeView() {
 
   return (
     <div className="space-y-6 p-4 lg:p-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-xl font-bold">
-              <BarChart3 className="h-5 w-5 text-teal-400" />
-              File System vs. MySQL 8.4 Relational Benchmark
-            </CardTitle>
-            <CardDescription>
-              Compares sequential flat-file CSV scanning against B+ Tree indexed SQL aggregation (DBMS Unit 1 & Unit 3).
-            </CardDescription>
+      
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-teal-400" />
+            <h1 className="text-lg font-semibold text-foreground">Storage Engine Telemetry Aggregation</h1>
           </div>
-          <Button onClick={runBenchmark} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Running...
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-4 w-4" /> Run Live Benchmark
-              </>
-            )}
-          </Button>
-        </CardHeader>
-      </Card>
+        </div>
+        <Button
+          onClick={runBenchmark}
+          disabled={isLoading}
+          className="h-9 gap-2 bg-teal-600 px-6 text-xs font-semibold hover:bg-teal-500"
+        >
+          {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          {isLoading ? 'Executing...' : 'Run Live Benchmark'}
+        </Button>
+      </div>
 
       {result && (
         <>
@@ -170,6 +164,18 @@ export function AnalyzeView() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Architectural Report Box */}
+          <div className="mt-4 rounded-lg border border-teal-900/30 bg-teal-950/10 p-5 shadow-inner">
+            <h3 className="mb-2 text-sm font-semibold text-teal-400">Execution Report & Analysis</h3>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              This benchmark demonstrates the architectural difference between application-layer file parsing and 
+              storage-engine indexing. The <strong>File System</strong> execution linearly parses a flat CSV trace (O(N) time complexity). 
+              Conversely, the <strong>DBMS</strong> execution utilizes MySQL 8.4's B+ Tree composite indexes to aggregate telemetry. 
+              This proves that utilizing proper relational indexing allows logarithmic (O(log N)) aggregation speeds while 
+              strictly enforcing ACID consistency and automated trigger logging.
+            </p>
           </div>
         </>
       )}

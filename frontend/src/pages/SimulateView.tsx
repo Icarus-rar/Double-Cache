@@ -46,13 +46,7 @@ const ACTIVE_WORKLOADS: WorkloadType[] = [
   WorkloadType.FLASH_SALE,
   WorkloadType.NETFLIX,
   WorkloadType.MULTI_TENANT,
-  WorkloadType.RAMMAP_PROOF, // <--- ADDED
-];
-
-const ACTIVE_STRATEGIES: Strategy[] = [
-  Strategy.DOUBLE_CACHING,
-  Strategy.DIRECT_IO,
-  Strategy.COORDINATED,
+  WorkloadType.RAMMAP_PROOF,
 ];
 
 const SCENARIO_DETAILS: Record<
@@ -85,7 +79,7 @@ const SCENARIO_DETAILS: Record<
     reason:
       'Direct I/O (O_DIRECT) is the strongest choice for multi-tenant isolation: bypassing the shared host OS Page Cache prevents Tenant B’s bulk scan from evicting Tenant A’s active working set.',
   },
-  [WorkloadType.RAMMAP_PROOF]: { // <--- ADDED
+  [WorkloadType.RAMMAP_PROOF]: {
     title: 'Windows RAMMap Physical Proof',
     pattern: 'Full table scan (SELECT COUNT(*)) mirroring the live 376MB RamMap experiment.',
     bestStrategy: Strategy.DIRECT_IO,
@@ -252,7 +246,7 @@ export function SimulateView() {
 
             <div>
               <label className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted-foreground">
-                Caching Strategy
+                I/O Architecture Mode
               </label>
               <Select
                 value={config.strategy}
@@ -263,11 +257,15 @@ export function SimulateView() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ACTIVE_STRATEGIES.map((s) => (
-                    <SelectItem key={s} value={s} className="text-xs">
-                      {s}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value={Strategy.DOUBLE_CACHING} className="text-xs">
+                    Standard Buffered I/O (Default)
+                  </SelectItem>
+                  <SelectItem value={Strategy.DIRECT_IO} className="text-xs">
+                    Direct I/O (O_DIRECT)
+                  </SelectItem>
+                  <SelectItem value={Strategy.COORDINATED} className="text-xs">
+                    Coordinated (posix_fadvise)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -530,43 +528,52 @@ export function SimulateView() {
         status={state.status}
       />
 
-      {/* Automated Strategy Diagnosis & Best Technique Verdict */}
-      <div className="glass-card rounded-lg border-l-4 border-l-teal-500 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Award className="h-5 w-5 text-teal-400" />
-            <h3 className="text-sm font-bold text-foreground">
-              Diagnostic Verdict & Best Technique — {scenarioInfo.title}
-            </h3>
+      {/* Dynamic Verdict Banner (Hides until complete) */}
+      {isRunning ? (
+        <div className="mt-4 flex items-center justify-center rounded-lg border border-border/40 bg-black/20 p-6">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-teal-500 border-t-transparent" />
+            <span className="font-mono text-xs text-muted-foreground">Evaluating memory footprint and I/O latency...</span>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-teal-500/40 bg-teal-950/40 px-2.5 py-1 font-mono text-xs font-semibold text-teal-300">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Recommended: {scenarioInfo.bestStrategy}
-          </span>
         </div>
-
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          {scenarioInfo.reason}
-        </p>
-
-        {state.telemetry.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-border/40 pt-2.5 font-mono text-[11px]">
-            <span className="text-muted-foreground">
-              Active Mode Diagnosis:{' '}
-              {config.strategy === Strategy.DOUBLE_CACHING ? (
-                <span className="text-red-400">
-                  Phantom capacity detected ({liveMetrics.duplicationPercent.toFixed(1)}% page overlap). Re-run with{' '}
-                  <strong>{scenarioInfo.bestStrategy}</strong> to compare.
-                </span>
-              ) : (
-                <span className="text-green-400">
-                  Mitigation active ({config.strategy}) — cross-layer page duplication eliminated.
-                </span>
-              )}
+      ) : isComplete ? (
+        <div className="mt-4 glass-card rounded-lg border-l-4 border-l-teal-500 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-teal-400" />
+              <h3 className="text-sm font-bold text-foreground">
+                Diagnostic Verdict & Best Technique — {scenarioInfo.title}
+              </h3>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-teal-500/40 bg-teal-950/40 px-2.5 py-1 font-mono text-xs font-semibold text-teal-300">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Recommended: {scenarioInfo.bestStrategy}
             </span>
           </div>
-        )}
-      </div>
+
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            {scenarioInfo.reason}
+          </p>
+
+          {state.telemetry.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-border/40 pt-2.5 font-mono text-[11px]">
+              <span className="text-muted-foreground">
+                Active Mode Diagnosis:{' '}
+                {config.strategy === Strategy.DOUBLE_CACHING ? (
+                  <span className="text-red-400">
+                    Phantom capacity detected ({liveMetrics.duplicationPercent.toFixed(1)}% page overlap). Re-run with{' '}
+                    <strong>{scenarioInfo.bestStrategy}</strong> to compare.
+                  </span>
+                ) : (
+                  <span className="text-green-400">
+                    Mitigation active ({config.strategy}) — cross-layer page duplication eliminated.
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

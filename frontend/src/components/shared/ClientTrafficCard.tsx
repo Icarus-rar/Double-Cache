@@ -1,4 +1,4 @@
-import { ShoppingBag, Film, Server, Activity } from 'lucide-react';
+import { ShoppingBag, Film, Server, Activity, Database } from 'lucide-react';
 import { WorkloadType } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,7 @@ export function ClientTrafficCard({
 }: ClientTrafficCardProps) {
   const isFlashSale = workload === WorkloadType.FLASH_SALE;
   const isNetflix = workload === WorkloadType.NETFLIX;
+  const isRamMap = workload === WorkloadType.RAMMAP_PROOF;
 
   // Derive realistic domain context from current page_id
   const isHotProduct = currentPageId <= 19;
@@ -43,7 +44,8 @@ export function ClientTrafficCard({
         <div className="flex items-center gap-2">
           {isFlashSale && <ShoppingBag className="h-4 w-4 text-teal-400" />}
           {isNetflix && <Film className="h-4 w-4 text-amber-400" />}
-          {!isFlashSale && !isNetflix && <Server className="h-4 w-4 text-blue-400" />}
+          {isRamMap && <Database className="h-4 w-4 text-blue-400" />}
+          {!isFlashSale && !isNetflix && !isRamMap && <Server className="h-4 w-4 text-blue-400" />}
           <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Simulated Client Workload Trace
           </span>
@@ -65,7 +67,7 @@ export function ClientTrafficCard({
           <div className="flex items-center justify-between rounded border border-border/50 bg-black/30 px-2.5 py-1.5">
             <div>
               <div className="font-semibold text-foreground">
-                {isHotProduct ? `🔥 HOT SKU: ${productName}` : `Catalog Browse (Page #${currentPageId})`}
+                {isHotProduct ? `HOT SKU: ${productName}` : `Catalog Browse (Page #${currentPageId})`}
               </div>
               <div className="font-mono text-[10px] text-muted-foreground">
                 {currentOp === 'WRITE'
@@ -92,8 +94,8 @@ export function ClientTrafficCard({
             <div>
               <div className="font-semibold text-foreground">
                 {isMetadataPage
-                  ? `👤 User Profile & Watchlist Index (Page #${currentPageId})`
-                  : `🎬 4K HDR Video Chunk #${currentPageId}.m4s`}
+                  ? `User Profile & Watchlist Index (Page #${currentPageId})`
+                  : `4K HDR Video Chunk #${currentPageId}.m4s`}
               </div>
               <div className="font-mono text-[10px] text-muted-foreground">
                 {isMetadataPage
@@ -119,8 +121,27 @@ export function ClientTrafficCard({
         </div>
       )}
 
+      {/* SCENARIO 4: RAMMAP PROOF (Full Table Scan) */}
+      {isRamMap && (
+        <div className="space-y-2 text-xs">
+          <div className="flex items-center justify-between rounded border border-border/50 bg-black/30 px-2.5 py-1.5">
+            <div>
+              <div className="font-semibold text-foreground">
+                Full Table Scan: flash_sale_inventory.ibd
+              </div>
+              <div className="font-mono text-[10px] text-muted-foreground">
+                Sequential Read — Page #{currentPageId} (SELECT COUNT(*))
+              </div>
+            </div>
+            <span className="rounded px-2 py-0.5 font-mono text-[10px] font-bold bg-blue-500/20 text-blue-400">
+              SEQ SCAN
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* SCENARIO 3: MULTI-TENANT CLOUD HYPERVISOR */}
-      {!isFlashSale && !isNetflix && (
+      {!isFlashSale && !isNetflix && !isRamMap && (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div
             className={cn(
@@ -146,7 +167,7 @@ export function ClientTrafficCard({
           >
             <div className="font-semibold text-red-400">Tenant B (Backup VM)</div>
             <div className="font-mono text-[10px] text-muted-foreground">
-              {isNoisyNeighbor ? `⚠️ Bulk Scan → Page #${currentPageId}` : 'Idle / Waiting for Snapshot'}
+              {isNoisyNeighbor ? `Bulk Scan → Page #${currentPageId}` : 'Idle / Waiting for Snapshot'}
             </div>
           </div>
         </div>
