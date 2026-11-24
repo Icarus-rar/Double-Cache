@@ -106,6 +106,13 @@ def _build_trace(
                 op = "WRITE" if rng.random() < write_ratio else "READ"
             trace.append((page_id, op))
 
+    elif scenario_name == "scenario4":
+        # Windows RAMMap Validation: Full Table Scan
+        # Sequential reads simulating SELECT COUNT(*) on flash_sale_inventory.ibd
+        # Floods both caches exactly as shown in the empirical physical experiment.
+        for step in range(num_steps):
+            trace.append((step, "READ"))
+
     else:
         # scenario1 (Default): E-Commerce Flash Sale (80/20 Hot-Spot Skew on pages 0..19)
         for _ in range(num_steps):

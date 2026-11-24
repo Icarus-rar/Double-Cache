@@ -19,6 +19,7 @@ export enum WorkloadType {
   FLASH_SALE = 'Flash Sale',
   MULTI_TENANT = 'Multi-Tenant',
   STARTUP_BUDGET = 'Startup Budget',
+  RAMMAP_PROOF = 'RAMMap Validation', // <--- ADDED
 }
 
 export enum SimulationStatus {
@@ -133,6 +134,7 @@ export const WORKLOAD_DESCRIPTIONS: Record<WorkloadType, string> = {
   [WorkloadType.FLASH_SALE]: 'Sudden traffic spike to a narrow working set',
   [WorkloadType.MULTI_TENANT]: 'Isolated working sets per tenant',
   [WorkloadType.STARTUP_BUDGET]: 'Small cache budget, memory-constrained',
+  [WorkloadType.RAMMAP_PROOF]: 'Full table scan replicating physical RAMMap experiment', // <--- ADDED
 };
 
 export const STRATEGY_DESCRIPTIONS: Record<Strategy, string> = {

@@ -23,6 +23,7 @@ import {
 } from '@/types';
 import { usePlayback } from '@/hooks/usePlayback';
 import { CacheVisualization } from '@/components/cache/CacheVisualization';
+import { ClientTrafficCard } from '@/components/shared/ClientTrafficCard';
 import { MetricStat } from '@/components/shared/MetricStat';
 import { HitTypeBadge } from '@/components/shared/HitTypeBadge';
 import { StatusIndicator } from '@/components/shared/StatusIndicator';
@@ -45,6 +46,7 @@ const ACTIVE_WORKLOADS: WorkloadType[] = [
   WorkloadType.FLASH_SALE,
   WorkloadType.NETFLIX,
   WorkloadType.MULTI_TENANT,
+  WorkloadType.RAMMAP_PROOF, // <--- ADDED
 ];
 
 const ACTIVE_STRATEGIES: Strategy[] = [
@@ -82,6 +84,13 @@ const SCENARIO_DETAILS: Record<
     bestStrategy: Strategy.DIRECT_IO,
     reason:
       'Direct I/O (O_DIRECT) is the strongest choice for multi-tenant isolation: bypassing the shared host OS Page Cache prevents Tenant B’s bulk scan from evicting Tenant A’s active working set.',
+  },
+  [WorkloadType.RAMMAP_PROOF]: { // <--- ADDED
+    title: 'Windows RAMMap Physical Proof',
+    pattern: 'Full table scan (SELECT COUNT(*)) mirroring the live 376MB RamMap experiment.',
+    bestStrategy: Strategy.DIRECT_IO,
+    reason:
+      'A full table scan sequentially reads every page exactly once. Under default Double Caching, this floods both the InnoDB Buffer Pool and OS Page Cache, effectively doubling memory usage. Direct I/O (O_DIRECT) bypasses the OS cache entirely, saving 376MB of physical RAM.',
   },
 };
 
@@ -379,6 +388,15 @@ export function SimulateView() {
 
         {/* Center: Live Dual-Layer Cache Visualization */}
         <div className="flex flex-col gap-3">
+          
+          <ClientTrafficCard 
+            workload={config.workload}
+            currentStep={liveMetrics.step}
+            currentPageId={liveMetrics.blockId}
+            currentOp={state.telemetry[state.currentStepIndex]?.operation ?? 'READ'}
+            isRunning={isRunning}
+          />
+          
           <CacheVisualization
             dbBlocks={state.dbCache}
             osBlocks={state.osCache}
