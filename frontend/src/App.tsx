@@ -1,27 +1,19 @@
 import { useState } from 'react';
-import { Layers, GitCompare, BarChart3 } from 'lucide-react';
+import { Layers, BarChart3 } from 'lucide-react';
 import { SimulateView } from '@/pages/SimulateView';
-import { CompareView } from '@/pages/CompareView';
 import { AnalyzeView } from '@/pages/AnalyzeView';
 import { cn } from '@/lib/utils';
-import ApiTest from './ApiTest';
 import './App.css';
 
-type View = 'simulate' | 'compare' | 'analyze';
+type View = 'simulate' | 'analyze';
 
 const NAV_ITEMS: { id: View; label: string; icon: typeof Layers }[] = [
   { id: 'simulate', label: 'Simulate', icon: Layers },
-  { id: 'compare', label: 'Compare', icon: GitCompare },
   { id: 'analyze', label: 'Analyze', icon: BarChart3 },
 ];
 
 function App() {
   const [view, setView] = useState<View>('simulate');
-
-  // Temporary route for API sanity check: http://localhost:5174/api-test
-  if (window.location.pathname === '/api-test') {
-    return <ApiTest />;
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -66,11 +58,11 @@ function App() {
             })}
           </nav>
 
-          {/* Right spacer for symmetry */}
+          {/* Right status indicator */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 px-2 py-1">
               <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
-              <span className="font-mono text-[10px] text-muted-foreground">MOCK DATA</span>
+              <span className="font-mono text-[10px] text-muted-foreground">FASTAPI · MYSQL 8.4</span>
             </div>
           </div>
         </div>
@@ -79,7 +71,6 @@ function App() {
       {/* View Content */}
       <main className="mx-auto max-w-[1600px] animate-fade-in" key={view}>
         {view === 'simulate' && <SimulateView />}
-        {view === 'compare' && <CompareView />}
         {view === 'analyze' && <AnalyzeView />}
       </main>
     </div>

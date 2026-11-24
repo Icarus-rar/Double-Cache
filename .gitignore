@@ -1,13 +1,15 @@
-__pycache__/
-*.pyc
-*.pyo
-
-.venv/
+﻿# Python
 venv/
-env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
 
-.vscode/
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 
-*.log
-
+# Local Secrets & OS
+.env
 .DS_Store
+Thumbs.db

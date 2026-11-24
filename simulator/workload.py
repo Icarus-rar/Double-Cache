@@ -60,3 +60,18 @@ class Workload:
                 accesses.append(random.randint(0, total_blocks - 1))
         
         return accesses
+
+def generate_workload(scenario_name: str = "scenario1", num_steps: int = 1000, total_blocks: int = 1000) -> list[int]:
+    """Bridge helper mapping FastAPI scenario identifiers to Workload access patterns."""
+    key = scenario_name.strip().lower()
+    if key in ("scenario1", "hotspot"):
+        return Workload.hotspot(
+            num_accesses=num_steps,
+            hotspot_blocks=min(20, total_blocks),
+            total_blocks=total_blocks,
+        )
+    if key in ("scenario2", "sequential"):
+        return Workload.sequential(num_blocks=num_steps, start_block=0)
+    if key in ("scenario3", "random"):
+        return Workload.random(num_accesses=num_steps, total_blocks=total_blocks)
+    return Workload.mixed(num_accesses=num_steps, total_blocks=total_blocks)

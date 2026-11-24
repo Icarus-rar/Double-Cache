@@ -1,181 +1,180 @@
-import csv
-import os
-import time
-from typing import Any, Dict, Optional
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+import { useState } from 'react';
+import { BarChart3, Database, FileSpreadsheet, Play, Loader2, Zap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
-from backend.db import get_db_connection
-from simulator.cache import ReplacementPolicy
-from simulator.full_simulator import MemoryHierarchySimulator
-from simulator.os_cache import CoordinationMode
-from simulator.workload import generate_workload
+interface EngineMetrics {
+  rows_scanned: number;
+  avg_latency_ms: number;
+  avg_duplication_rate: number;
+  max_disk_reads: number;
+}
 
+interface BenchmarkResponse {
+  status: string;
+  benchmark: {
+    csv_time_ms: number;
+    dbms_time_ms: number;
+    speedup_factor: string;
+    faster_engine: string;
+  };
+  csv_metrics: EngineMetrics;
+  dbms_metrics: EngineMetrics;
+}
 
-class SimulationRequest(BaseModel):
-    scenario_name: str = Field(default="scenario1", description="Target scenario identifier")
-    db_cache_size: int = Field(default=50, ge=1, description="DBMS buffer pool capacity in pages")
-    os_cache_size: int = Field(default=50, ge=1, description="OS page cache capacity in pages")
-    coordination_mode: str = Field(default="DOUBLE_CACHING", description="DOUBLE_CACHING, O_DIRECT, or COORDINATED")
-    replacement_policy: str = Field(default="LRU", description="LRU, LFU, FIFO, OPTIMAL, or CLOCK")
-    num_steps: int = Field(default=1000, ge=10, le=100000, description="Total simulation steps")
-    write_ratio: float = Field(default=0.2, ge=0.0, le=1.0, description="Write request probability")
+export function AnalyzeView() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<BenchmarkResponse | null>(null);
 
-
-@app.post("/api/simulate")
-def run_simulation_endpoint(payload: SimulationRequest) -> Dict[str, Any]:
-    try:
-        coord_mode = CoordinationMode[payload.coordination_mode.upper()]
-    except KeyError:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid coordination_mode. Must be one of {[m.name for m in CoordinationMode]}"
-        )
-
-    try:
-        repl_policy = ReplacementPolicy[payload.replacement_policy.upper()]
-    except KeyError:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid replacement_policy. Must be one of {[p.name for p in ReplacementPolicy]}"
-        )
-
-    workload = generate_workload(
-        scenario_name=payload.scenario_name,
-        num_steps=payload.num_steps
-    )
-
-    sim = MemoryHierarchySimulator(
-        db_cache_size=payload.db_cache_size,
-        os_cache_size=payload.os_cache_size,
-        policy=repl_policy,
-        mode=coord_mode
-    )
-
-    telemetry = sim.run_workload(
-        workload=workload,
-        write_probability=payload.write_ratio
-    )
-
-    steps_data = [
-        {
-            "step_no": t.step_no,
-            "page_id": t.page_id,
-            "operation": t.operation,
-            "hit_type": t.hit_type,
-            "latency_ms": t.latency_ms,
-            "db_cache_hit_ratio": t.db_cache_hit_ratio,
-            "os_cache_hit_ratio": t.os_cache_hit_ratio,
-            "duplication_rate": t.duplication_rate,
-            "cumulative_disk_reads": t.cumulative_disk_reads,
-            "is_thrashing_step": t.is_thrashing_step,
-        }
-        for t in telemetry
-    ]
-
-    total_steps = len(telemetry)
-    avg_latency = sum(t.latency_ms for t in telemetry) / total_steps if total_steps > 0 else 0.0
-    avg_duplication = sum(t.duplication_rate for t in telemetry) / total_steps if total_steps > 0 else 0.0
-    total_thrashing = sum(1 for t in telemetry if t.is_thrashing_step)
-
-    return {
-        "status": "success",
-        "config": payload.model_dump(),
-        "summary": {
-            "total_steps": total_steps,
-            "db_hits": sim.db_hits,
-            "os_hits": sim.os_hits,
-            "disk_hits": sim.disk_hits,
-            "cumulative_disk_reads": sim.cumulative_disk_reads,
-            "avg_latency_ms": round(avg_latency, 4),
-            "avg_duplication_rate": round(avg_duplication, 4),
-            "total_thrashing_events": total_thrashing,
-        },
-        "telemetry": steps_data
+  const runBenchmark = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/benchmark/file-vs-dbms');
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${response.status}`);
+      }
+      const data: BenchmarkResponse = await response.json();
+      setResult(data);
+      toast({
+        title: 'Benchmark Complete',
+        description: `Winner: ${data.benchmark.faster_engine} (${data.benchmark.speedup_factor} speedup)`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Benchmark Failed',
+        description: error.message || 'Could not reach /api/benchmark/file-vs-dbms',
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  return (
+    <div className="space-y-6 p-4 lg:p-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-xl font-bold">
+              <BarChart3 className="h-5 w-5 text-teal-400" />
+              File System vs. MySQL 8.4 Relational Benchmark
+            </CardTitle>
+            <CardDescription>
+              Compares sequential flat-file CSV scanning against B+ Tree indexed SQL aggregation (DBMS Unit 1 & Unit 3).
+            </CardDescription>
+          </div>
+          <Button onClick={runBenchmark} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Running...
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" /> Run Live Benchmark
+              </>
+            )}
+          </Button>
+        </CardHeader>
+      </Card>
 
-@app.get("/api/benchmark/file-vs-dbms")
-def benchmark_file_vs_dbms() -> Dict[str, Any]:
-    csv_file_path = os.path.join("data", "scenario1_results.csv")
-    if not os.path.isfile(csv_file_path):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Benchmark dataset '{csv_file_path}' not found on file system."
-        )
+      {result && (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Flat File (CSV) Execution</CardDescription>
+                <CardTitle className="text-2xl font-mono">{result.benchmark.csv_time_ms} ms</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  {result.csv_metrics.rows_scanned} rows parsed sequentially via Python I/O
+                </p>
+              </CardContent>
+            </Card>
 
-    # 1. File System Benchmark (Standard Python File I/O Aggregation)
-    start_csv = time.perf_counter()
-    csv_row_count = 0
-    total_latency_csv = 0.0
-    total_duplication_csv = 0.0
-    max_disk_reads_csv = 0
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>MySQL 8.4 Indexed Query</CardDescription>
+                <CardTitle className="text-2xl font-mono text-teal-400">
+                  {result.benchmark.dbms_time_ms} ms
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  {result.dbms_metrics.rows_scanned} rows aggregated via composite index
+                </p>
+              </CardContent>
+            </Card>
 
-    with open(csv_file_path, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            csv_row_count += 1
-            total_latency_csv += float(row.get("latency_ms", 0.0))
-            total_duplication_csv += float(row.get("duplication_rate", 0.0))
-            reads = int(row.get("cumulative_disk_reads", 0))
-            if reads > max_disk_reads_csv:
-                max_disk_reads_csv = reads
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Engine Comparison</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <Zap className="h-5 w-5 text-amber-400" />
+                  {result.benchmark.speedup_factor}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Badge variant="outline">{result.benchmark.faster_engine}</Badge>
+              </CardContent>
+            </Card>
+          </div>
 
-    end_csv = time.perf_counter()
-    csv_time_ms = round((end_csv - start_csv) * 1000, 3)
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                  File System Telemetry Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 font-mono text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Avg Access Latency:</span>
+                  <span>{result.csv_metrics.avg_latency_ms} ms</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Avg Duplication Rate:</span>
+                  <span>{(result.csv_metrics.avg_duplication_rate * 100).toFixed(2)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Max Cumulative Disk Reads:</span>
+                  <span>{result.csv_metrics.max_disk_reads}</span>
+                </div>
+              </CardContent>
+            </Card>
 
-    csv_avg_latency = round(total_latency_csv / csv_row_count, 4) if csv_row_count > 0 else 0.0
-    csv_avg_duplication = round(total_duplication_csv / csv_row_count, 4) if csv_row_count > 0 else 0.0
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Database className="h-4 w-4 text-teal-400" />
+                  MySQL 8.4 Telemetry Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 font-mono text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Avg Access Latency:</span>
+                  <span>{result.dbms_metrics.avg_latency_ms} ms</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Avg Duplication Rate:</span>
+                  <span>{(result.dbms_metrics.avg_duplication_rate * 100).toFixed(2)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Max Cumulative Disk Reads:</span>
+                  <span>{result.dbms_metrics.max_disk_reads}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
-    # 2. MySQL 8.4 Benchmark (Indexed Relational Query Aggregation)
-    start_dbms = time.perf_counter()
-    dbms_result = {}
-
-    try:
-        with get_db_connection() as conn:
-            with conn.cursor(dictionary=True) as cursor:
-                cursor.execute(
-                    """
-                    SELECT 
-                        COUNT(*) AS row_count,
-                        ROUND(AVG(m.latency_ms), 4) AS avg_latency_ms,
-                        ROUND(AVG(m.duplication_rate), 4) AS avg_duplication_rate,
-                        MAX(m.cumulative_disk_reads) AS max_disk_reads
-                    FROM step_metrics m
-                    JOIN simulation_runs r ON m.run_id = r.run_id
-                    WHERE r.scenario_id = 'scenario1'
-                    """
-                )
-                dbms_result = cursor.fetchone() or {}
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Database aggregation failed: {str(exc)}"
-        )
-
-    end_dbms = time.perf_counter()
-    dbms_time_ms = round((end_dbms - start_dbms) * 1000, 3)
-
-    speedup = round(csv_time_ms / dbms_time_ms, 2) if dbms_time_ms > 0 else 0.0
-
-    return {
-        "status": "success",
-        "benchmark": {
-            "csv_time_ms": csv_time_ms,
-            "dbms_time_ms": dbms_time_ms,
-            "speedup_factor": f"{speedup}x",
-            "faster_engine": "DBMS (MySQL 8.4)" if dbms_time_ms < csv_time_ms else "File System (CSV)"
-        },
-        "csv_metrics": {
-            "rows_scanned": csv_row_count,
-            "avg_latency_ms": csv_avg_latency,
-            "avg_duplication_rate": csv_avg_duplication,
-            "max_disk_reads": max_disk_reads_csv
-        },
-        "dbms_metrics": {
-            "rows_scanned": dbms_result.get("row_count", 0),
-            "avg_latency_ms": float(dbms_result.get("avg_latency_ms") or 0.0),
-            "avg_duplication_rate": float(dbms_result.get("avg_duplication_rate") or 0.0),
-            "max_disk_reads": dbms_result.get("max_disk_reads", 0)
-        }
-    }
+export default AnalyzeView;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Play, RotateCcw, AlertTriangle, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { DuplicationChart } from "@/charts/DuplicationChart";
 import { DiskReadsChart } from "@/charts/DiskReadsChart";
 import { MetricStat } from "@/components/shared/MetricStat";
 import { useToast } from "@/hooks/use-toast";
+import type { SimulationHistoryPoint } from "@/types";
 
 export interface TelemetryPoint {
   step_no: number;
@@ -49,10 +50,23 @@ export const SimulateView: React.FC = () => {
   const [telemetry, setTelemetry] = useState<TelemetryPoint[]>([]);
   const [summary, setSummary] = useState<SimulationSummary | null>(null);
 
+  const chartHistory: SimulationHistoryPoint[] = useMemo(
+    () =>
+      telemetry.map((t) => ({
+        step: t.step_no,
+        duplicationPercent: Number((t.duplication_rate * 100).toFixed(2)),
+        latencyMs: t.latency_ms,
+        dbHitRate: t.db_cache_hit_ratio,
+        osHitRate: t.os_cache_hit_ratio,
+        diskReads: t.cumulative_disk_reads,
+      })),
+    [telemetry],
+  );
+
   const handleRunSimulation = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/simulate", {
+      const response = await fetch("http://127.0.0.1:8000/api/simulate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +112,7 @@ export const SimulateView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 lg:p-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -117,7 +131,7 @@ export const SimulateView: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase text-muted-foreground">Scenario</label>
               <Select value={scenarioName} onValueChange={setScenarioName} disabled={isLoading}>
@@ -202,33 +216,46 @@ export const SimulateView: React.FC = () => {
       </Card>
 
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricStat
-            title="Avg Latency"
-            value={`${summary.avg_latency_ms.toFixed(3)} ms`}
-            description="Per-step memory access latency"
-          />
-          <MetricStat
-            title="Duplication Rate"
-            value={`${(summary.avg_duplication_rate * 100).toFixed(1)}%`}
-            description="Intersection of DBMS & OS resident pages"
-          />
-          <MetricStat
-            title="Cumulative Disk Reads"
-            value={summary.cumulative_disk_reads.toString()}
-            description="Physical storage fetches incurred"
-          />
-          <MetricStat
-            title="Thrashing Events"
-            value={summary.total_thrashing_events.toString()}
-            description="High duplication + disk hit spikes"
-            alert={summary.total_thrashing_events > 0}
-          />
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <Card className="p-4">
+            <MetricStat
+              label="Avg Latency"
+              value={summary.avg_latency_ms.toFixed(3)}
+              unit="ms"
+              color="db"
+              size="lg"
+            />
+          </Card>
+          <Card className="p-4">
+            <MetricStat
+              label="Duplication Rate"
+              value={(summary.avg_duplication_rate * 100).toFixed(1)}
+              unit="%"
+              color={summary.avg_duplication_rate > 0.1 ? "dup" : "ok"}
+              size="lg"
+            />
+          </Card>
+          <Card className="p-4">
+            <MetricStat
+              label="Cumulative Disk Reads"
+              value={summary.cumulative_disk_reads}
+              color="os"
+              size="lg"
+            />
+          </Card>
+          <Card className="p-4">
+            <MetricStat
+              label="Thrashing Events"
+              value={summary.total_thrashing_events}
+              color={summary.total_thrashing_events > 0 ? "dup" : "ok"}
+              size="lg"
+            />
+          </Card>
         </div>
       )}
 
       {summary && summary.total_thrashing_events > 0 && (
-        <div className="flex items-center space-x-2 p-4 rounded-lg bg-destructive/15 text-destructive border border-destructive/30">
+        <div className="flex items-center space-x-2 rounded-lg border border-destructive/30 bg-destructive/15 p-4 text-destructive">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <div className="text-sm">
             <span className="font-semibold">Memory Thrashing Detected:</span> {summary.total_thrashing_events} steps
@@ -237,14 +264,14 @@ export const SimulateView: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-semibold">Access Latency Over Time</CardTitle>
             <CardDescription>Per-step execution duration (ms)</CardDescription>
           </CardHeader>
           <CardContent>
-            <LatencyChart data={telemetry} />
+            <LatencyChart data={chartHistory} />
           </CardContent>
         </Card>
 
@@ -254,7 +281,7 @@ export const SimulateView: React.FC = () => {
             <CardDescription>DBMS Buffer Pool vs. OS Page Cache ratios</CardDescription>
           </CardHeader>
           <CardContent>
-            <HitRateChart data={telemetry} />
+            <HitRateChart data={chartHistory} />
           </CardContent>
         </Card>
 
@@ -264,7 +291,7 @@ export const SimulateView: React.FC = () => {
             <CardDescription>Fraction of redundant pages residing in both layers</CardDescription>
           </CardHeader>
           <CardContent>
-            <DuplicationChart data={telemetry} />
+            <DuplicationChart data={chartHistory} />
           </CardContent>
         </Card>
 
@@ -274,7 +301,7 @@ export const SimulateView: React.FC = () => {
             <CardDescription>Total physical I/O operations demanded from storage</CardDescription>
           </CardHeader>
           <CardContent>
-            <DiskReadsChart data={telemetry} />
+            <DiskReadsChart data={chartHistory} />
           </CardContent>
         </Card>
       </div>
