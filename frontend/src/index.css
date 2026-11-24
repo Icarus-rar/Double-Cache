@@ -4,47 +4,51 @@
 
 @layer base {
   :root {
-    --background: 222 22% 7%;
+    /* Made the base background darker so the glows pop */
+    --background: 222 22% 3%; 
     --foreground: 210 20% 92%;
-    --card: 222 20% 9%;
+    --card: 222 20% 7%;
     --card-foreground: 210 20% 92%;
-    --popover: 222 22% 8%;
+    --popover: 222 22% 6%;
     --popover-foreground: 210 20% 92%;
     --primary: 172 76% 45%;
     --primary-foreground: 222 22% 7%;
-    --secondary: 222 18% 14%;
+    --secondary: 222 18% 12%;
     --secondary-foreground: 210 20% 88%;
-    --muted: 222 16% 13%;
-    --muted-foreground: 215 14% 55%;
-    --accent: 172 60% 40%;
-    --accent-foreground: 210 20% 95%;
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 222 16% 16%;
-    --input: 222 16% 18%;
+    --muted: 222 16% 12%;
+    --muted-foreground: 215 14% 65%;
+    --border: 222 16% 14%;
+    --input: 222 16% 16%;
     --ring: 172 60% 45%;
-    --radius: 0.5rem;
-
-    --chart-1: 172 70% 50%;
-    --chart-2: 38 90% 55%;
-    --chart-3: 0 72% 58%;
-    --chart-4: 142 60% 50%;
-    --chart-5: 210 60% 60%;
+    --radius: 0.75rem;
 
     --db-color: 172 70% 50%;
     --os-color: 38 90% 55%;
     --dup-color: 0 72% 55%;
-    --ok-color: 142 60% 50%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply text-foreground;
+    background-color: hsl(var(--background));
+    
+    /* Premium Tech Background: Mesh Glows + Subtle Dot Grid */
+    background-image: 
+      /* Teal ambient glow top-left */
+      radial-gradient(circle at 10% 10%, hsla(172, 76%, 45%, 0.12) 0%, transparent 40%),
+      /* Blue ambient glow bottom-right */
+      radial-gradient(circle at 90% 90%, hsla(222, 80%, 40%, 0.12) 0%, transparent 40%),
+      /* Subtle dot grid pattern */
+      radial-gradient(hsla(215, 14%, 55%, 0.08) 1.5px, transparent 1.5px);
+      
+    background-size: 100% 100%, 100% 100%, 32px 32px;
+    background-attachment: fixed;
+    
+    /* The New Font */
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -52,60 +56,22 @@
 
 @layer utilities {
   .font-mono {
-    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
+    font-family: 'JetBrains Mono', monospace;
   }
 
   .glass-card {
-    background: hsl(222 20% 9% / 0.7);
-    backdrop-filter: blur(12px);
+    background: linear-gradient(145deg, hsl(222 20% 9% / 0.8), hsl(222 20% 6% / 0.9));
+    backdrop-filter: blur(16px);
     border: 1px solid hsl(var(--border));
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   }
 
-  .text-db {
-    color: hsl(var(--db-color));
-  }
-  .text-os {
-    color: hsl(var(--os-color));
-  }
-  .text-dup {
-    color: hsl(var(--dup-color));
-  }
-  .text-ok {
-    color: hsl(var(--ok-color));
-  }
-
-  .bg-db {
-    background-color: hsl(var(--db-color));
-  }
-  .bg-os {
-    background-color: hsl(var(--os-color));
-  }
-  .bg-dup {
-    background-color: hsl(var(--dup-color));
-  }
-  .bg-ok {
-    background-color: hsl(var(--ok-color));
-  }
-
-  .border-db {
-    border-color: hsl(var(--db-color));
-  }
-  .border-os {
-    border-color: hsl(var(--os-color));
-  }
-  .border-dup {
-    border-color: hsl(var(--dup-color));
-  }
-
-  .glow-db {
-    box-shadow: 0 0 12px hsl(var(--db-color) / 0.4);
-  }
-  .glow-os {
-    box-shadow: 0 0 12px hsl(var(--os-color) / 0.4);
-  }
-  .glow-dup {
-    box-shadow: 0 0 16px hsl(var(--dup-color) / 0.5);
-  }
+  .text-db { color: hsl(var(--db-color)); }
+  .text-os { color: hsl(var(--os-color)); }
+  .text-dup { color: hsl(var(--dup-color)); }
+  .bg-db { background-color: hsl(var(--db-color)); }
+  .bg-os { background-color: hsl(var(--os-color)); }
+  .bg-dup { background-color: hsl(var(--dup-color)); }
 
   .scrollbar-thin {
     scrollbar-width: thin;

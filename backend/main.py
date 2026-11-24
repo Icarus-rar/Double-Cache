@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 import time
 from typing import Any, Dict
@@ -109,8 +110,106 @@ def run_simulation_endpoint(payload: SimulationRequest) -> Dict[str, Any]:
     avg_duplication = sum(t.duplication_rate for t in telemetry) / total_steps if total_steps > 0 else 0.0
     total_thrashing = sum(1 for t in telemetry if t.is_thrashing_step)
 
+    # Persist live simulation run & telemetry rows into MySQL 8.4
+    persisted_run_id = None
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                # 1. Ensure parent scenario exists for Foreign Key integrity
+                cursor.execute("SHOW COLUMNS FROM scenarios")
+                scen_cols = cursor.fetchall()
+                cols_to_insert = []
+                vals_to_insert = []
+                for col in scen_cols:
+                    field, col_type, is_null, default_val, extra = col[0], col[1].lower(), col[2], col[4], col[5].lower()
+                    if "auto_increment" in extra:
+                        continue
+                    if field == "scenario_id":
+                        cols_to_insert.append(field)
+                        vals_to_insert.append(payload.scenario_name)
+                    elif is_null == "NO" and default_val is None:
+                        cols_to_insert.append(field)
+                        if any(t in col_type for t in ("int", "decimal", "float", "double")):
+                            vals_to_insert.append(0)
+                        else:
+                            vals_to_insert.append(f"Live Workload ({payload.scenario_name})")
+
+                placeholders = ", ".join(["%s"] * len(cols_to_insert))
+                col_list = ", ".join(cols_to_insert)
+                cursor.execute(
+                    f"INSERT IGNORE INTO scenarios ({col_list}) VALUES ({placeholders})",
+                    tuple(vals_to_insert),
+                )
+
+                # 2. Insert parent run record into simulation_runs
+                cursor.execute(
+                    """
+                    INSERT INTO simulation_runs (
+                        scenario_id,
+                        mitigation_strategy,
+                        page_replacement_policy,
+                        db_cache_size_pages,
+                        os_cache_size_pages,
+                        total_steps,
+                        workload_config
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        payload.scenario_name,
+                        coord_mode.name,
+                        repl_policy.name,
+                        payload.db_cache_size,
+                        payload.os_cache_size,
+                        total_steps,
+                        json.dumps({"source": "live_ui", "write_ratio": payload.write_ratio}),
+                    ),
+                )
+                persisted_run_id = cursor.lastrowid
+
+                # 3. Bulk-insert per-step telemetry into step_metrics (fires AFTER INSERT trigger)
+                metric_rows = [
+                    (
+                        persisted_run_id,
+                        t.step_no,
+                        t.page_id,
+                        t.operation,
+                        t.hit_type,
+                        t.latency_ms,
+                        t.db_cache_hit_ratio,
+                        t.os_cache_hit_ratio,
+                        t.duplication_rate,
+                        t.cumulative_disk_reads,
+                        1 if t.is_thrashing_step else 0,
+                    )
+                    for t in telemetry
+                ]
+                cursor.executemany(
+                    """
+                    INSERT INTO step_metrics (
+                        run_id,
+                        step_no,
+                        page_id,
+                        operation,
+                        hit_type,
+                        latency_ms,
+                        db_cache_hit_ratio,
+                        os_cache_hit_ratio,
+                        duplication_rate,
+                        cumulative_disk_reads,
+                        is_thrashing_step
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    metric_rows,
+                )
+            conn.commit()
+    except Exception as db_exc:
+        print(f"[WARN] MySQL persistence skipped for run: {db_exc}")
+
     return {
         "status": "success",
+        "run_id": persisted_run_id,
         "config": payload.model_dump(),
         "summary": {
             "total_steps": total_steps,

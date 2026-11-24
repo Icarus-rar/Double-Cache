@@ -2,6 +2,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Label,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -18,7 +19,7 @@ interface HitRateChartProps {
 export function HitRateChart({ data, height = 180 }: HitRateChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 8, right: 12, left: 4, bottom: 16 }}>
         <defs>
           <linearGradient id="dbHitGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#2dd4bf" stopOpacity={0.4} />
@@ -35,14 +36,18 @@ export function HitRateChart({ data, height = 180 }: HitRateChartProps) {
           tick={{ fill: 'hsl(215 14% 55%)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           tickLine={false}
           axisLine={{ stroke: 'hsl(222 16% 16%)' }}
-        />
+        >
+          <Label value="Simulation Step" position="insideBottom" offset={-10} fill="hsl(215 14% 55%)" fontSize={10} />
+        </XAxis>
         <YAxis
           tick={{ fill: 'hsl(215 14% 55%)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
           domain={[0, 1]}
-        />
+        >
+          <Label value="Hit Ratio (%)" angle={-90} position="insideLeft" offset={6} fill="hsl(215 14% 55%)" fontSize={10} />
+        </YAxis>
         <Tooltip
           contentStyle={{
             backgroundColor: 'hsl(222 22% 8%)',
@@ -58,6 +63,8 @@ export function HitRateChart({ data, height = 180 }: HitRateChartProps) {
           }}
         />
         <Legend
+          verticalAlign="top"
+          height={20}
           wrapperStyle={{ fontSize: '10px', fontFamily: 'JetBrains Mono' }}
           formatter={(value) => (
             <span style={{ color: value === 'dbHitRate' ? '#2dd4bf' : '#fbbf24' }}>

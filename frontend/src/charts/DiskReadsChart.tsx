@@ -2,6 +2,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Label,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,7 +18,7 @@ interface DiskReadsChartProps {
 export function DiskReadsChart({ data, height = 180 }: DiskReadsChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 8, right: 12, left: 4, bottom: 16 }}>
         <defs>
           <linearGradient id="diskGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#94a3b8" stopOpacity={0.35} />
@@ -30,13 +31,17 @@ export function DiskReadsChart({ data, height = 180 }: DiskReadsChartProps) {
           tick={{ fill: 'hsl(215 14% 55%)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           tickLine={false}
           axisLine={{ stroke: 'hsl(222 16% 16%)' }}
-        />
+        >
+          <Label value="Simulation Step" position="insideBottom" offset={-10} fill="hsl(215 14% 55%)" fontSize={10} />
+        </XAxis>
         <YAxis
           tick={{ fill: 'hsl(215 14% 55%)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           tickLine={false}
           axisLine={false}
           allowDecimals={false}
-        />
+        >
+          <Label value="Disk I/Os" angle={-90} position="insideLeft" offset={6} fill="hsl(215 14% 55%)" fontSize={10} />
+        </YAxis>
         <Tooltip
           contentStyle={{
             backgroundColor: 'hsl(222 22% 8%)',

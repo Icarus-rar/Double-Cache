@@ -2,6 +2,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Label,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,7 +18,7 @@ interface DuplicationChartProps {
 export function DuplicationChart({ data, height = 180 }: DuplicationChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 8, right: 12, left: 4, bottom: 16 }}>
         <defs>
           <linearGradient id="dupGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#ef4444" stopOpacity={0.5} />
@@ -30,14 +31,18 @@ export function DuplicationChart({ data, height = 180 }: DuplicationChartProps) 
           tick={{ fill: 'hsl(215 14% 55%)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           tickLine={false}
           axisLine={{ stroke: 'hsl(222 16% 16%)' }}
-        />
+        >
+          <Label value="Simulation Step" position="insideBottom" offset={-10} fill="hsl(215 14% 55%)" fontSize={10} />
+        </XAxis>
         <YAxis
           tick={{ fill: 'hsl(215 14% 55%)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v) => `${v.toFixed(0)}%`}
           domain={[0, 100]}
-        />
+        >
+          <Label value="Dup (%)" angle={-90} position="insideLeft" offset={6} fill="hsl(215 14% 55%)" fontSize={10} />
+        </YAxis>
         <Tooltip
           contentStyle={{
             backgroundColor: 'hsl(222 22% 8%)',
